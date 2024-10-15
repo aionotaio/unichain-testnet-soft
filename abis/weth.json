@@ -1,0 +1,10 @@
+[
+    {
+        "anonymous":false,
+        "inputs":[
+           
+        ],
+        "name":"deposit",
+        "type":"function"
+    }
+]
