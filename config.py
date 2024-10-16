@@ -24,5 +24,3 @@ SYMBOLS_PATH = os.path.join(DATA_DIR, 'token_symbols.txt')
 
 PRIVATE_KEYS_PATH = os.path.join(FILES_DIR, 'private_keys.txt')
 LOGS_PATH = os.path.join(LOGS_DIR, 'logs.txt')
-
-eth_to_bridge = (0.01, 0.1)

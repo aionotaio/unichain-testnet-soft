@@ -18,6 +18,7 @@ class TokenAmount:
 
         self.decimals = decimals
 
+
 class Network:
     def __init__(self, name: str, rpc: str, chain_id: int, coin_symbol: str, explorer: str, decimals: int = 18):
         self.name = name

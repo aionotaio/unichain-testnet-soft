@@ -1,8 +1,8 @@
+import asyncio
 import random
 from typing import Optional, Union
 
 import aiofiles
-import asyncio
 import ujson
 
 

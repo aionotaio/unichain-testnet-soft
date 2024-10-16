@@ -27,6 +27,10 @@ class Client:
                 logger.warning(f'{self.wallet_address} | Nonce too low. Retrying with updated nonce...')
                 tx_params['nonce'] += 1
                 return await self.send_transaction(tx_params)
+            if 'replacement transaction underpriced' in str(e):
+                logger.warning(f'{self.wallet_address} | Replacement transaction underpriced. Retrying with updated nonce...')
+                tx_params['nonce'] += 1
+                return await self.send_transaction(tx_params)
             logger.error(f'{self.wallet_address} | Error sending transaction: {e}')
             return None
 
@@ -34,19 +38,18 @@ class Client:
         tx_params = {
             'to': contract.address,
             'data': contract.encode_abi(method, args=args),
-            'value': value,
             'gasPrice': await self.w3.eth.gas_price,
             'nonce': await self.w3.eth.get_transaction_count(self.wallet_address),
             'chainId': await self.w3.eth.chain_id
         }
-
+        if value:
+            tx_params['value'] = value
         try:
             estimate_gas = await self.w3.eth.estimate_gas(tx_params)
             tx_params['gas'] = int(estimate_gas * 1.1) 
         except Exception as e:
             logger.error(f'{self.wallet_address} | Error estimating gas: {e}')
             return None
-
         return await self.send_transaction(tx_params)
 
     async def bridge_eth(self, contract_address: str, value: Union[TokenAmount, int], abi_path: str) -> Optional[bool]:
