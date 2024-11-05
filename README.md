@@ -9,6 +9,11 @@
 ## Settings
 - `files/private_keys.txt` - Private keys. 1 line = 1 private key.
 
+## config.py
+- `MAX_THREADS` - Max number of threads.
+
+### Follow: https://t.me/touchingcode
+
 ## Run
 
 - Python version: 3.10+
