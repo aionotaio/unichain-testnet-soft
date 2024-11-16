@@ -58,7 +58,7 @@ class Manager:
                 bytecode_path=ERC721_BYTECODE
             )
         except Exception as e:
-            logger.error(f'Error deploying contract: {e}')
+            logger.error(f'{client_uni.wallet_address} | Error deploying contract: {e}')
             return None
 
     @staticmethod
@@ -82,7 +82,7 @@ class Manager:
                 bytecode_path=ERC20_BYTECODE
             )
         except Exception as e:
-            logger.error(f'Error deploying contract: {e}')
+            logger.error(f'{client_uni.wallet_address} | Error deploying contract: {e}')
             return None
     
     @staticmethod

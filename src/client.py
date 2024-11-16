@@ -15,10 +15,15 @@ class Client:
         self.network = network
         self.w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(endpoint_uri=self.network.rpc))
         self.wallet_address = AsyncWeb3.to_checksum_address(self.w3.eth.account.from_key(private_key).address)
+        self.nonce_lock = asyncio.Lock()
 
     async def get_balance(self) -> int:
         return await self.w3.eth.get_balance(self.wallet_address)
 
+    async def get_transaction_count(self) -> int:
+        async with self.nonce_lock:
+            return await self.w3.eth.get_transaction_count(self.wallet_address)
+        
     async def send_transaction(self, tx_params: dict) -> Optional[str]:
         try:
             sign = self.w3.eth.account.sign_transaction(tx_params, self.private_key)
@@ -39,7 +44,7 @@ class Client:
             'from': self.wallet_address,
             'data': contract.encode_abi(method, args=args),
             'gasPrice': await self.w3.eth.gas_price,
-            'nonce': await self.w3.eth.get_transaction_count(self.wallet_address),
+            'nonce': await self.get_transaction_count(),
             'chainId': await self.w3.eth.chain_id
         }
         if value:
@@ -89,7 +94,7 @@ class Client:
         tx_params = {
             'chainId': await self.w3.eth.chain_id,
             'from': self.wallet_address,
-            'nonce': await self.w3.eth.get_transaction_count(self.wallet_address),
+            'nonce': await self.get_transaction_count(),
             'gasPrice': await self.w3.eth.gas_price
         }
 
