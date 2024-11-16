@@ -20,13 +20,17 @@ class Manager:
         else:
             bridge_amount = int(bridge_amount * 10 ** 18)
 
-        logger.info(f'{client_eth.wallet_address} | Attempting to bridge {format(bridge_amount / 10 ** 18, ".18f").rstrip("0").rstrip(".")} ETH...')
+        try:
+            logger.info(f'{client_eth.wallet_address} | Attempting to bridge {format(bridge_amount / 10 ** 18, ".18f").rstrip("0").rstrip(".")} ETH...')
 
-        return await client_eth.bridge_eth(
-            contract_address='0xea58fcA6849d79EAd1f26608855c2D6407d54Ce2',
-            value=bridge_amount,
-            abi_path=ETHBRIDGE_ABI
-        )
+            return await client_eth.bridge_eth(
+                contract_address='0xea58fcA6849d79EAd1f26608855c2D6407d54Ce2',
+                value=bridge_amount,
+                abi_path=ETHBRIDGE_ABI
+            )
+        except Exception as e:
+            logger.error(f'{client_eth.wallet_address} | Error bridging ETH: {e}')
+            return None
     
     @staticmethod
     async def wrap_eth(client_uni: Client, wrap_amount=None):
@@ -38,13 +42,17 @@ class Manager:
         else:
             wrap_amount = int(wrap_amount * 10 ** 18)
     
-        logger.info(f'{client_uni.wallet_address} | Attempting to wrap {format(wrap_amount / 10 ** 18, ".18f").rstrip("0").rstrip(".")} ETH...')
+        try:
+            logger.info(f'{client_uni.wallet_address} | Attempting to wrap {format(wrap_amount / 10 ** 18, ".18f").rstrip("0").rstrip(".")} ETH...')
     
-        return await client_uni.wrap_eth(
-            contract_address='0x4200000000000000000000000000000000000006',
-            value=wrap_amount,
-            abi_path=WETH_ABI
-        )
+            return await client_uni.wrap_eth(
+                contract_address='0x4200000000000000000000000000000000000006',
+                value=wrap_amount,
+                abi_path=WETH_ABI
+            )
+        except Exception as e:
+            logger.error(f'{client_uni.wallet_address} | Error wrapping ETH: {e}')
+            return None
     
     @staticmethod
     async def deploy_erc721(client_uni: Client, name: str, symbol: str):
@@ -63,12 +71,16 @@ class Manager:
 
     @staticmethod
     async def mint_nft(client_uni: Client, contract_address: str):
-        logger.info(f'{client_uni.wallet_address} | Attempting to mint NFT with contract {contract_address}')
+        try:
+            logger.info(f'{client_uni.wallet_address} | Attempting to mint NFT with contract {contract_address}')
         
-        return await client_uni.mint_nft(
-            contract_address=contract_address, 
-            abi_path=ERC721_ABI
-        )
+            return await client_uni.mint_nft(
+                contract_address=contract_address, 
+                abi_path=ERC721_ABI
+            )
+        except Exception as e:
+            logger.error(f'{client_uni.wallet_address} | Error interacting contract: {e}')
+            return None
     
     @staticmethod
     async def deploy_erc20(client_uni: Client, name: str, symbol: str):
@@ -87,13 +99,17 @@ class Manager:
     
     @staticmethod
     async def interact_with_contract(client_uni: Client, contract_address: str):
-        logger.info(f'{client_uni.wallet_address} | Attempting to interact with ERC-20 contract {contract_address}')
+        try:
+            logger.info(f'{client_uni.wallet_address} | Attempting to interact with ERC-20 contract {contract_address}')
         
-        return await client_uni.random_interact_with_contract(
-            contract_address=contract_address,
-            abi_path=ERC20_ABI
-        )
-    
+            return await client_uni.random_interact_with_contract(
+                contract_address=contract_address,
+                abi_path=ERC20_ABI
+            )
+        except Exception as e:
+            logger.error(f'{client_uni.wallet_address} | Error interacting contract: {e}')
+            return None
+        
     @staticmethod
     async def random_interactions(client_uni: Client):
         wrap_eth_calls = random.randint(0, 3)
