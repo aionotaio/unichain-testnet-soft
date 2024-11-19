@@ -32,6 +32,7 @@ NAMES_PATH = os.path.join(DATA_DIR, 'token_names.txt')
 SYMBOLS_PATH = os.path.join(DATA_DIR, 'token_symbols.txt')
 
 PRIVATE_KEYS_PATH = os.path.join(FILES_DIR, 'private_keys.txt')
+PROXIES_PATH = os.path.join(FILES_DIR, 'proxies.txt')
 LOGS_PATH = os.path.join(LOGS_DIR, 'logs.txt')
 
 

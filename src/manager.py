@@ -6,7 +6,7 @@ from loguru import logger
 from src.client import Client
 from src.models import ethereum_sepolia, unichain_sepolia
 from src.utils import Utils, ETHBRIDGE_ABI, WETH_ABI, ERC721_ABI, ERC721_BYTECODE, ERC20_ABI, ERC20_BYTECODE, NAMES_PATH, SYMBOLS_PATH
-from config import bridge_amount, wrap_amount
+from config import bridge_amount, wrap_amount, delay
 
 
 class Manager:
@@ -118,28 +118,32 @@ class Manager:
 
         tasks = []
 
-        for _ in range(wrap_eth_calls):
-            tasks.append(asyncio.create_task(Manager.wrap_eth(client_uni)))
+        try:
+            for _ in range(wrap_eth_calls):
+                tasks.append(asyncio.create_task(Manager.wrap_eth(client_uni)))
 
-        for _ in range(deploy_erc721_calls):
-            name, symbol = await Utils.get_random_name_and_symbol(NAMES_PATH, SYMBOLS_PATH)
-            deploy_task = asyncio.create_task(Manager.deploy_erc721(client_uni, name, symbol))
+            for _ in range(deploy_erc721_calls):
+                name, symbol = await Utils.get_random_name_and_symbol(NAMES_PATH, SYMBOLS_PATH)
+                deploy_task = asyncio.create_task(Manager.deploy_erc721(client_uni, name, symbol))
             
-            tasks.append(deploy_task)
+                tasks.append(deploy_task)
             
-            tasks.append(asyncio.create_task(Manager.mint_nft(client_uni, await deploy_task)))
+                tasks.append(asyncio.create_task(Manager.mint_nft(client_uni, await deploy_task)))
 
-        for _ in range(deploy_erc20_calls):
-            name, symbol = await Utils.get_random_name_and_symbol(NAMES_PATH, SYMBOLS_PATH)
-            deploy_task = asyncio.create_task(Manager.deploy_erc20(client_uni, name, symbol))
+            for _ in range(deploy_erc20_calls):
+                name, symbol = await Utils.get_random_name_and_symbol(NAMES_PATH, SYMBOLS_PATH)
+                deploy_task = asyncio.create_task(Manager.deploy_erc20(client_uni, name, symbol))
             
-            tasks.append(deploy_task)
+                tasks.append(deploy_task)
             
-            tasks.append(asyncio.create_task(Manager.interact_with_contract(client_uni, await deploy_task)))
+                tasks.append(asyncio.create_task(Manager.interact_with_contract(client_uni, await deploy_task)))
 
-        random.shuffle(tasks)
+            random.shuffle(tasks)
 
-        await asyncio.gather(*tasks)
+            await asyncio.gather(*tasks)
+        except Exception as e:
+            logger.error(f'{client_uni.wallet_address} | Error doing random interactions: {e}')
+            return None
 
     @staticmethod
     def open_menu():
@@ -161,7 +165,7 @@ class Manager:
         return choice
     
     @staticmethod
-    async def handle_choice(choice, private_keys):
+    async def handle_choice(choice: int, private_keys: list, proxies: list):
         tasks = []
 
         if choice == 1:
@@ -172,16 +176,31 @@ class Manager:
             
             if second_choice == 1:
                 logger.info('Starting to bridge certain amount ETH...')
-                
+                    
                 for private_key in private_keys:
-                    client_eth = Client(private_key, ethereum_sepolia)
-                    tasks.append(Manager.bridge_eth(client_eth, bridge_amount))
+                    if proxies:
+                        proxy_index = private_keys.index(private_key) % len(proxies)
+                        proxy = proxies[proxy_index]
+                    else:
+                        proxy = None
+                    
+                    client_eth = Client(private_key, ethereum_sepolia, proxy)
+                    tasks.append(asyncio.create_task(Manager.bridge_eth(client_eth, bridge_amount)))
+                    await asyncio.sleep(random.randint(delay[0], delay[1]))
+
             elif second_choice == 2:
                 logger.info('Starting to bridge random amount ETH...')
                 
                 for private_key in private_keys:
-                    client_eth = Client(private_key, ethereum_sepolia)
-                    tasks.append(Manager.bridge_eth(client_eth))          
+                    if proxies:
+                        proxy_index = private_keys.index(private_key) % len(proxies)
+                        proxy = proxies[proxy_index]
+                    else:
+                        proxy = None
+                    
+                    client_eth = Client(private_key, ethereum_sepolia, proxy)
+                    tasks.append(asyncio.create_task(Manager.bridge_eth(client_eth)))
+                    await asyncio.sleep(random.randint(delay[0], delay[1]))
         elif choice == 2:
             print('''\n1. Wrap a certain amount (change in config.py).
 2. Wrap a random amount.\n''')
@@ -192,52 +211,100 @@ class Manager:
                 logger.info('Starting to wrap certain amount ETH...')
                 
                 for private_key in private_keys:
-                    client_uni = Client(private_key, unichain_sepolia)
-                    tasks.append(Manager.wrap_eth(client_uni, wrap_amount))
+                    if proxies:
+                        proxy_index = private_keys.index(private_key) % len(proxies)
+                        proxy = proxies[proxy_index]
+                    else:
+                        proxy = None
+                    
+                    client_uni = Client(private_key, unichain_sepolia, proxy)
+                    tasks.append(asyncio.create_task(Manager.wrap_eth(client_uni, wrap_amount)))
+                    await asyncio.sleep(random.randint(delay[0], delay[1]))
             elif second_choice == 2:
                 logger.info('Starting to wrap random amount ETH...')
                 
                 for private_key in private_keys:
-                    client_uni = Client(private_key, unichain_sepolia)
-                    tasks.append(Manager.wrap_eth(client_uni))
+                    if proxies:
+                        proxy_index = private_keys.index(private_key) % len(proxies)
+                        proxy = proxies[proxy_index]
+                    else:
+                        proxy = None
+                    
+                    client_uni = Client(private_key, unichain_sepolia, proxy)
+                    tasks.append(asyncio.create_task(Manager.wrap_eth(client_uni)))
+                    await asyncio.sleep(random.randint(delay[0], delay[1]))
         elif choice == 3:
             logger.info('Starting to deploy an ERC-721 contract...')
             
             deploy_tasks = []
             
             for private_key in private_keys:
-                client_uni = Client(private_key, unichain_sepolia)
+                if proxies:
+                    proxy_index = private_keys.index(private_key) % len(proxies)
+                    proxy = proxies[proxy_index]
+                else:
+                    proxy = None
+                
+                client_uni = Client(private_key, unichain_sepolia, proxy)
                 name, symbol = await Utils.get_random_name_and_symbol(NAMES_PATH, SYMBOLS_PATH)
-                deploy_tasks.append(Manager.deploy_erc721(client_uni, name, symbol))      
+                deploy_tasks.append(asyncio.create_task(Manager.deploy_erc721(client_uni, name, symbol)))
+                await asyncio.sleep(random.randint(delay[0], delay[1]))     
         
             results = await asyncio.gather(*deploy_tasks)
 
             for i, deploy_result in enumerate(results):
                 if deploy_result is not None:
-                    client_uni = Client(private_keys[i], unichain_sepolia)
-                    tasks.append(Manager.mint_nft(client_uni, deploy_result))
+                    if proxies:
+                        proxy_index = i % len(proxies)
+                        proxy = proxies[proxy_index]
+                    else:
+                        proxy = None
+                    
+                    client_uni = Client(private_keys[i], unichain_sepolia, proxy)
+                    tasks.append(asyncio.create_task(Manager.mint_nft(client_uni, deploy_result)))
+                    await asyncio.sleep(random.randint(delay[0], delay[1]))
         elif choice == 4:
             logger.info('Starting to deploy an ERC-20 contract...')
             
             deploy_tasks = []
             
             for private_key in private_keys:
-                client_uni = Client(private_key, unichain_sepolia)
+                if proxies:
+                    proxy_index = private_keys.index(private_key) % len(proxies)
+                    proxy = proxies[proxy_index]
+                else:
+                    proxy = None
+                
+                client_uni = Client(private_key, unichain_sepolia, proxy)
                 name, symbol = await Utils.get_random_name_and_symbol(NAMES_PATH, SYMBOLS_PATH)
-                deploy_tasks.append(Manager.deploy_erc20(client_uni, name, symbol))
+                deploy_tasks.append(asyncio.create_task(Manager.deploy_erc20(client_uni, name, symbol)))
+                await asyncio.sleep(random.randint(delay[0], delay[1]))
         
             results = await asyncio.gather(*deploy_tasks)
 
             for i, deploy_result in enumerate(results):
                 if deploy_result is not None:
-                    client_uni = Client(private_keys[i], unichain_sepolia)
-                    tasks.append(Manager.interact_with_contract(client_uni, deploy_result))
+                    if proxies:
+                        proxy_index = i % len(proxies)
+                        proxy = proxies[proxy_index]
+                    else:
+                        proxy = None
+                    
+                    client_uni = Client(private_keys[i], unichain_sepolia, proxy)
+                    tasks.append(asyncio.create_task(Manager.interact_with_contract(client_uni, deploy_result)))
+                    await asyncio.sleep(random.randint(delay[0], delay[1]))
         elif choice == 5:
             logger.info('Starting random interactions...')
             
             for private_key in private_keys:
-                client_uni = Client(private_key, unichain_sepolia)
-                tasks.append(Manager.random_interactions(client_uni))
+                if proxies:
+                    proxy_index = private_keys.index(private_key) % len(proxies)
+                    proxy = proxies[proxy_index]
+                else:
+                    proxy = None
+                client_uni = Client(private_key, unichain_sepolia, proxy)
+                tasks.append(asyncio.create_task(Manager.random_interactions(client_uni)))
+                await asyncio.sleep(random.randint(delay[0], delay[1]))
         elif choice == 6:
             pass
         else:

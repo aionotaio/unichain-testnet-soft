@@ -9,10 +9,12 @@
 
 ## Settings
 - `files/private_keys.txt` - Private keys. 1 line = 1 private key
+- `files/proxies.txt` - HTTP proxies. 1 line = 1 proxy in format `login:pass@ip:port`. **Optional**.
 
 ## config.py
 - `bridge_amount` - Amount in ETH you want to bridge from Ethereum Sepolia to Unichain Sepolia
 - `wrap_amount` - Amount in ETH you want to wrap in Unichain Sepolia
+- `delay` - Range in seconds between the start of tasks for each wallet.
 
 ### Follow: https://t.me/touchingcode
 

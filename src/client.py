@@ -10,10 +10,13 @@ from src.models import Network, TokenAmount
 
 
 class Client:
-    def __init__(self, private_key: str, network: Network):
+    def __init__(self, private_key: str, network: Network, proxy: str = None):
         self.private_key = private_key
         self.network = network
-        self.w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(endpoint_uri=self.network.rpc))
+        if proxy:
+            self.w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(endpoint_uri=self.network.rpc, request_kwargs={"proxy": f"http://{proxy}"}))
+        else:
+            self.w3 = AsyncWeb3(AsyncWeb3.AsyncHTTPProvider(endpoint_uri=self.network.rpc))
         self.wallet_address = AsyncWeb3.to_checksum_address(self.w3.eth.account.from_key(private_key).address)
         self.nonce_lock = asyncio.Lock()
 
