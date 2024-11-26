@@ -35,7 +35,7 @@ class Client:
             if 'nonce too low' in str(e):
                 tx_params['nonce'] += 1
                 return await self.send_transaction(tx_params)
-            if 'replacement transaction underpriced' in str(e):
+            elif 'replacement transaction underpriced' in str(e):
                 tx_params['nonce'] += 1
                 return await self.send_transaction(tx_params)
             logger.error(f'{self.wallet_address} | Error sending transaction: {e}')
@@ -151,6 +151,29 @@ class Client:
             return await self.verif_tx(tx)
         return None
     
+    async def mint_morkie_nft(self, contract_address: str) -> Optional[bool]:
+        formatted = self.wallet_address.lstrip('0x').lower()
+        tx_params = {
+            'to': contract_address,
+            'from': self.wallet_address,
+            'data': f'0x84bb1e42000000000000000000000000{formatted}0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
+            'gasPrice': await self.w3.eth.gas_price,
+            'nonce': await self.get_transaction_count(),
+            'chainId': await self.w3.eth.chain_id
+        }
+        try:
+            estimate_gas = await self.w3.eth.estimate_gas(tx_params)
+            tx_params['gas'] = int(estimate_gas * 1.1) 
+        except Exception as e:
+            if '2' in str(e):
+                logger.error(f'{self.wallet_address} | Error: Already have a Unicorn NFT from morkie.xyz.')
+                return None
+
+        tx = await self.send_transaction(tx_params)
+        if tx:
+            return await self.verif_tx(tx)
+        return None
+    
     async def verif_tx(self, tx_hash: str) -> bool:
         try:
             data = await self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=200)
@@ -182,4 +205,3 @@ class Client:
         else:
             max_priority_fee_per_gas_lst.sort()
             return max_priority_fee_per_gas_lst[len(max_priority_fee_per_gas_lst) // 2]
-        

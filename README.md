@@ -5,6 +5,7 @@
 - Wrap ETH in Unichain Sepolia
 - Deploy an ERC-721 contract in Unichain Sepolia + interact with it
 - Deploy an ERC-20 contract in Unichain Sepolia + interact with it
+- Mint a Unicorn NFT from morkie.xyz
 - Making random interactions in Unichain Sepolia
 
 ## Settings

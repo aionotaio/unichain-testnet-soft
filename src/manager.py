@@ -83,6 +83,18 @@ class Manager:
             return None
     
     @staticmethod
+    async def mint_morkie_nft(client_uni: Client):
+        try:
+            logger.info(f'{client_uni.wallet_address} | Attempting to mint a Unicorn NFT from morkie.xyz')
+        
+            return await client_uni.mint_morkie_nft(
+                contract_address='0x99F4146B950Ec5B8C6Bc1Aa6f6C9b14b6ADc6256',
+            )
+        except Exception as e:
+            logger.error(f'{client_uni.wallet_address} | Error interacting contract: {e}')
+            return None
+    
+    @staticmethod
     async def deploy_erc20(client_uni: Client, name: str, symbol: str):
         try:
             logger.info(f'{client_uni.wallet_address} | Attempting to deploy ERC-20 contract in {client_uni.network.name}')
@@ -137,6 +149,8 @@ class Manager:
                 tasks.append(deploy_task)
             
                 tasks.append(asyncio.create_task(Manager.interact_with_contract(client_uni, await deploy_task)))
+            
+            tasks.append(asyncio.create_task(Manager.mint_morkie_nft(client_uni)))
 
             random.shuffle(tasks)
 
@@ -158,10 +172,11 @@ class Manager:
 2. Wrap ETH in Unichain Sepolia.
 3. Deploy an ERC-721 contract in Unichain Sepolia + interact with it.
 4. Deploy an ERC-20 contract in Unichain Sepolia + interact with it.
-5. Random interaction
-6. Quit\n''')
+5. Mint a Unicorn NFT from morkie.xyz.
+6. Random interaction
+7. Quit\n''')
         
-        choice = int(input('Choose an option (1-6): '))
+        choice = int(input('Choose an option (1-7): '))
         return choice
     
     @staticmethod
@@ -294,6 +309,18 @@ class Manager:
                     tasks.append(asyncio.create_task(Manager.interact_with_contract(client_uni, deploy_result)))
                     await asyncio.sleep(random.randint(delay[0], delay[1]))
         elif choice == 5:
+            logger.info('Starting to mint a Unicorn NFT from morkie.xyz...')
+
+            for private_key in private_keys:
+                if proxies:
+                    proxy_index = private_keys.index(private_key) % len(proxies)
+                    proxy = proxies[proxy_index]
+                else:
+                    proxy = None
+                client_uni = Client(private_key, unichain_sepolia, proxy)
+                tasks.append(asyncio.create_task(Manager.mint_morkie_nft(client_uni)))
+                await asyncio.sleep(random.randint(delay[0], delay[1]))
+        elif choice == 6:
             logger.info('Starting random interactions...')
             
             for private_key in private_keys:
@@ -305,7 +332,7 @@ class Manager:
                 client_uni = Client(private_key, unichain_sepolia, proxy)
                 tasks.append(asyncio.create_task(Manager.random_interactions(client_uni)))
                 await asyncio.sleep(random.randint(delay[0], delay[1]))
-        elif choice == 6:
+        elif choice == 7:
             pass
         else:
             logger.error('Print a number from 1 to 6.')
