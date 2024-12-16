@@ -152,7 +152,7 @@ class Client:
         return None
     
     async def mint_morkie_nft(self, contract_address: str) -> Optional[bool]:
-        formatted = self.wallet_address.lstrip('0x').lower()
+        formatted = self.wallet_address.lstrip('0x').zfill(40).lower()
         tx_params = {
             'to': contract_address,
             'from': self.wallet_address,
