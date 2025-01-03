@@ -1,5 +1,7 @@
-from decimal import Decimal
 from typing import Union
+from decimal import Decimal
+
+from config import RPCS
 
 
 class TokenAmount:
@@ -32,18 +34,18 @@ class Network:
         return self.name
 
 
-unichain_sepolia = Network(
-    name='Unichain Sepolia',
-    rpc='https://sepolia.unichain.org/',
-    chain_id=1301,
-    coin_symbol='ETH',
-    explorer='https://sepolia.uniscan.xyz/'
-)
-
 ethereum_sepolia = Network(
     name='Sepolia',
-    rpc='https://ethereum-sepolia-rpc.publicnode.com',
+    rpc=RPCS['ethereum_sepolia'],
     chain_id=11155111,
     coin_symbol='ETH',
     explorer='https://sepolia.etherscan.io/'
+)
+
+unichain_sepolia = Network(
+    name='Unichain Sepolia',
+    rpc=RPCS['unichain_sepolia'],
+    chain_id=1301,
+    coin_symbol='ETH',
+    explorer='https://sepolia.uniscan.xyz/'
 )

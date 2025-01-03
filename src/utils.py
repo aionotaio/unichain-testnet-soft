@@ -1,39 +1,12 @@
-import asyncio
 import random
-import os
-import sys
-from pathlib import Path
+import asyncio
 from typing import Optional, Union
 
-import aiofiles
 import ujson
+import aiofiles
+from loguru import logger
 
-
-if getattr(sys, 'frozen', False):
-    ROOT_DIR = Path(sys.executable).parent.parent.absolute()
-else:
-    ROOT_DIR = Path(__file__).parent.parent.absolute()
-
-ABIS_DIR = os.path.join(ROOT_DIR, 'abis')
-FILES_DIR = os.path.join(ROOT_DIR, 'files')
-LOGS_DIR = os.path.join(ROOT_DIR, 'logs')
-DATA_DIR = os.path.join(ROOT_DIR, 'data')
-
-ETHBRIDGE_ABI = os.path.join(ABIS_DIR, 'ethbridge.json')
-WETH_ABI = os.path.join(ABIS_DIR, 'weth.json')
-
-ERC721_ABI = os.path.join(ABIS_DIR, 'erc721contract.json')
-ERC721_BYTECODE = os.path.join(DATA_DIR, 'erc721bytecode.txt')
-
-ERC20_ABI = os.path.join(ABIS_DIR, 'erc20contract.json')
-ERC20_BYTECODE = os.path.join(DATA_DIR, 'erc20bytecode.txt')
-
-NAMES_PATH = os.path.join(DATA_DIR, 'token_names.txt')
-SYMBOLS_PATH = os.path.join(DATA_DIR, 'token_symbols.txt')
-
-PRIVATE_KEYS_PATH = os.path.join(FILES_DIR, 'private_keys.txt')
-PROXIES_PATH = os.path.join(FILES_DIR, 'proxies.txt')
-LOGS_PATH = os.path.join(LOGS_DIR, 'logs.txt')
+from config import DELAY_BETWEEN_TX
 
 
 class Utils:
@@ -68,4 +41,40 @@ class Utils:
         name, symbol = random.choice(paired_list)
     
         return name.strip(), symbol.strip()
+
+    @staticmethod
+    async def execute_with_delay(transaction, wallet_address: str, account_index: int):
+        delay = random.randint(DELAY_BETWEEN_TX[0], DELAY_BETWEEN_TX[1])
+        logger.info(f'Account {account_index+1} | {wallet_address} | Waiting {delay} seconds before transaction...')
+        
+        await asyncio.sleep(delay)
+        
+        logger.info(f'Account {account_index+1} | {wallet_address} | Delay completed. Starting next transaction...')
+        return await transaction
+    
+    @staticmethod
+    def round_to_significant_digits(num: Union[int, float], digits: int) -> str:
+        if num == 0:
+            return 0.0
+        num_str = f"{num:.10f}"
+        first_non_zero_index = None
+        for i, char in enumerate(num_str):
+            if char not in ('0', '.'):
+                first_non_zero_index = i
+                break
+    
+        if first_non_zero_index is None:
+            return 0.0
+
+        decimal_position = num_str.find('.')
+        significant_position = first_non_zero_index - decimal_position - 1
+
+        rounded_num = round(num, digits + significant_position)
+
+        rounded_str = f"{rounded_num:.{digits + significant_position}f}"
+
+        if '.' in rounded_str:
+            rounded_str = rounded_str.rstrip('0').rstrip('.')
+    
+        return rounded_str
     
