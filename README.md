@@ -49,9 +49,12 @@
     - `erc20_count` - Random number of actions with ERC-20 contracts, from first digit and to second.
 
     - `wrap_count` - Random number of doing ETH wrap, from first digit and to second.
+
+    - `mint_morkie_nfts` - Set `True` to mint Morkie NFTs, `False` to skip minting.
 - `RPCS` - RPCs for Ethereum Sepolia and Unichain Sepolia.
 - `DELAY_BETWEEN_TX` - Range in seconds between doing tasks.
 - `DELAY_BETWEEN_ACCS` - Range in seconds between the start of tasks for each wallet.
+- `SHUFFLE_WALLETS` - Set `True` if you want to shuffle wallets, `False` to not shuffle.
 
 
 ### Follow: https://t.me/touchingcode

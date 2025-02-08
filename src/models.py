@@ -39,7 +39,7 @@ ethereum_sepolia = Network(
     rpc=RPCS['ethereum_sepolia'],
     chain_id=11155111,
     coin_symbol='ETH',
-    explorer='https://sepolia.etherscan.io/'
+    explorer='https://sepolia.etherscan.io'
 )
 
 unichain_sepolia = Network(
@@ -47,5 +47,5 @@ unichain_sepolia = Network(
     rpc=RPCS['unichain_sepolia'],
     chain_id=1301,
     coin_symbol='ETH',
-    explorer='https://sepolia.uniscan.xyz/'
+    explorer='https://sepolia.uniscan.xyz'
 )

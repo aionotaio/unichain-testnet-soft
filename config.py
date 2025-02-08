@@ -8,7 +8,7 @@ BRIDGE_PARAMS = {
 WRAP_PARAMS = {
     "min_balance": False, 
     "amount": False, 
-    "percent": (5, 10)
+    "percent": (1, 2)
 }
 
 RANDOM_CONFIG = {
@@ -16,7 +16,8 @@ RANDOM_CONFIG = {
         'erc721_count': (1, 1),
         'erc20_count': (1, 1),
         'wrap_count': (1, 1)
-    }
+    },
+    'mint_morkie_nfts': True
 }
 
 RPCS = {
@@ -26,3 +27,5 @@ RPCS = {
 
 DELAY_BETWEEN_TX = (5, 12)
 DELAY_BETWEEN_ACC = (10, 20)
+
+SHUFFLE_WALLETS = True

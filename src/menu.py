@@ -8,7 +8,7 @@ from src.utils import Utils
 from src.client import Client
 from src.vars import NAMES_PATH, SYMBOLS_PATH
 from src.models import ethereum_sepolia, unichain_sepolia
-from config import BRIDGE_PARAMS, DELAY_BETWEEN_ACC, WRAP_PARAMS
+from config import BRIDGE_PARAMS, DELAY_BETWEEN_ACC, WRAP_PARAMS, SHUFFLE_WALLETS
 
 from src.wrap import WrapManager
 from src.erc_20 import ERC20Manager
@@ -41,18 +41,30 @@ class Menu:
 3. Deploy an ERC-721 contract in Unichain Sepolia + interact with it.
 4. Deploy an ERC-20 contract in Unichain Sepolia + interact with it.
 5. Mint an Unicorn NFT from morkie.xyz.
-6. Mint an Europa NFT from morkie.xyz.            
+6. Mint an Europa NFT from morkie.xyz.                
 7. Random interaction
 8. Quit\n''')
         
         choice = int(input('Choose an option (1-8): '))
         return choice
+
+    def shuffle_wallets(self, private_keys: list, proxies: list = None) -> tuple[list, list, list]:
+        indices = list(range(len(private_keys)))
+        if SHUFFLE_WALLETS:
+            random.shuffle(indices)
+            private_keys = [private_keys[i] for i in indices]
+            if proxies:
+                proxies = [proxies[i % len(proxies)] for i in indices]
+        return private_keys, proxies, indices
     
-    async def handle_choice(self, choice: int, private_keys: list, proxies: list) -> Optional[bool]:
+    async def handle_choice(self, choice: int, private_keys_list: list, proxies_list: list) -> Optional[bool]:
+        private_keys, proxies, shuffled_indices = self.shuffle_wallets(private_keys_list, proxies_list)
+    
         if choice == 1:
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_eth = Client(private_key, ethereum_sepolia, proxy)
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
@@ -73,9 +85,8 @@ class Menu:
 
             account_tasks = []
             for i, private_key in enumerate(private_keys):
-                account_tasks.append(asyncio.create_task(
-                    process_account(private_key, i)
-                ))
+                task = asyncio.create_task(process_account(private_key, i))
+                account_tasks.append(task)
         
                 if i < len(private_keys) - 1:
                     delay = random.randint(DELAY_BETWEEN_ACC[0], DELAY_BETWEEN_ACC[1])
@@ -84,11 +95,12 @@ class Menu:
 
             if account_tasks:
                 await asyncio.gather(*account_tasks, return_exceptions=True)
-        
+
         elif choice == 2:
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
                     result = await self.wrap_manager.wrap_eth(client_uni, WRAP_PARAMS, account_index)
@@ -108,9 +120,8 @@ class Menu:
 
             account_tasks = []
             for i, private_key in enumerate(private_keys):
-                account_tasks.append(asyncio.create_task(
-                    process_account(private_key, i)
-                ))
+                task = asyncio.create_task(process_account(private_key, i))
+                account_tasks.append(task)
         
                 if i < len(private_keys) - 1:
                     delay = random.randint(DELAY_BETWEEN_ACC[0], DELAY_BETWEEN_ACC[1])
@@ -123,9 +134,10 @@ class Menu:
         elif choice == 3:
             second_choice = int(input('Enter an integer number of how many contracts you want to deploy: '))
 
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
                     account_results = []
@@ -175,9 +187,10 @@ class Menu:
         elif choice == 4:
             second_choice = int(input('Enter an integer number of how many contracts you want to deploy: '))
 
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
                     account_results = []
@@ -212,9 +225,8 @@ class Menu:
 
             account_tasks = []
             for i, private_key in enumerate(private_keys):
-                account_tasks.append(asyncio.create_task(
-                    process_account(private_key, i)
-                ))
+                task = asyncio.create_task(process_account(private_key, i))
+                account_tasks.append(task)
         
                 if i < len(private_keys) - 1:
                     delay = random.randint(DELAY_BETWEEN_ACC[0], DELAY_BETWEEN_ACC[1])
@@ -225,9 +237,10 @@ class Menu:
                 await asyncio.gather(*account_tasks, return_exceptions=True)
 
         elif choice == 5:
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
                     result = await self.morkie_manager.mint_unicorn_nft(client_uni, account_index)
@@ -247,9 +260,8 @@ class Menu:
 
             account_tasks = []
             for i, private_key in enumerate(private_keys):
-                account_tasks.append(asyncio.create_task(
-                    process_account(private_key, i)
-                ))
+                task = asyncio.create_task(process_account(private_key, i))
+                account_tasks.append(task)
         
                 if i < len(private_keys) - 1:
                     delay = random.randint(DELAY_BETWEEN_ACC[0], DELAY_BETWEEN_ACC[1])
@@ -260,9 +272,10 @@ class Menu:
                 await asyncio.gather(*account_tasks, return_exceptions=True)
 
         elif choice == 6:
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
                     result = await self.morkie_manager.mint_europa_nft(client_uni, account_index)
@@ -282,9 +295,8 @@ class Menu:
 
             account_tasks = []
             for i, private_key in enumerate(private_keys):
-                account_tasks.append(asyncio.create_task(
-                    process_account(private_key, i)
-                ))
+                task = asyncio.create_task(process_account(private_key, i))
+                account_tasks.append(task)
         
                 if i < len(private_keys) - 1:
                     delay = random.randint(DELAY_BETWEEN_ACC[0], DELAY_BETWEEN_ACC[1])
@@ -295,9 +307,10 @@ class Menu:
                 await asyncio.gather(*account_tasks, return_exceptions=True)
 
         elif choice == 7:
-            async def process_account(private_key: str, account_index: int):
+            async def process_account(private_key: str, i: int):
                 try:
-                    proxy = proxies[account_index % len(proxies)] if proxies else None
+                    account_index = shuffled_indices[i]
+                    proxy = proxies[i % len(proxies)] if proxies else None
                     client_uni = Client(private_key, unichain_sepolia, proxy)
             
                     result = await self.random_manager.random_interactions(client_uni, account_index)
@@ -317,20 +330,22 @@ class Menu:
 
             account_tasks = []
             for i, private_key in enumerate(private_keys):
-                account_tasks.append(asyncio.create_task(
-                    process_account(private_key, i, len(private_keys))
-                ))
+                task = asyncio.create_task(process_account(private_key, i))
+                account_tasks.append(task)
         
                 if i < len(private_keys) - 1:
                     delay = random.randint(DELAY_BETWEEN_ACC[0], DELAY_BETWEEN_ACC[1])
                     logger.info(f'Waiting {delay} seconds before starting next account...')
                     await asyncio.sleep(delay)
+            
+            if account_tasks:
+                await asyncio.gather(*account_tasks, return_exceptions=True)
 
         elif choice == 8:
             logger.info('Exiting...')
             return None
         
         else:
-            logger.error('Please enter a number from 1 to 8.')
+            logger.error('Please enter a number from 1 to 9.')
 
         logger.info('Finished.')

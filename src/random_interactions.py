@@ -7,6 +7,7 @@ from src.utils import Utils
 from src.client import Client
 from src.wrap import WrapManager
 from src.erc_20 import ERC20Manager
+from src.morkie import MorkieManager
 from src.erc_721 import ERC721Manager
 from config import RANDOM_CONFIG, WRAP_PARAMS
 from src.vars import NAMES_PATH, SYMBOLS_PATH
@@ -17,6 +18,7 @@ class RandomManager:
         self.wrap_manager = WrapManager()
         self.erc20_manager = ERC20Manager()
         self.erc721_manager = ERC721Manager()
+        self.morkie_manager = MorkieManager()
 
     async def random_interactions(self, client_uni: Client, account_index: int) -> Optional[bool]:
         try:
@@ -30,7 +32,7 @@ class RandomManager:
             
                 contract_address = await self.erc721_manager.deploy_erc721(client_uni, name, symbol, account_index, is_first_tx=(i==0 and erc721_count > 0))
             
-                if isinstance(contract_address, Exception):
+                if isinstance(contract_address, Exception) or contract_address is None:
                     logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-721 Deploy {i+1} failed with error: {contract_address}.')
                 elif contract_address:
                     logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-721 Deploy {i+1} completed successfully.')
@@ -38,7 +40,7 @@ class RandomManager:
                     logger.info(f'Account {account_index+1} | {client_uni.wallet_address} | Starting mint for ERC-721 contract {i+1}.')
                     mint_result = await self.erc721_manager.mint_nft(client_uni, contract_address, account_index)
                 
-                    if isinstance(mint_result, Exception):
+                    if isinstance(mint_result, Exception) or mint_result is False:
                         logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-721 Mint {i+1} failed with error: {mint_result}.')
                     else:
                         logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-721 Mint {i+1} completed successfully.')
@@ -49,7 +51,7 @@ class RandomManager:
             
                 contract_address = await self.erc20_manager.deploy_erc20(client_uni, name, symbol, account_index, is_first_tx=(i==0 and erc721_count == 0))
             
-                if isinstance(contract_address, Exception):
+                if isinstance(contract_address, Exception) or contract_address is None:
                     logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-20 Deploy {i+1} failed with error: {contract_address}.')
                 elif contract_address:
                     logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-20 Deploy {i+1} completed successfully.')
@@ -57,7 +59,7 @@ class RandomManager:
                     logger.info(f'Account {account_index+1} | {client_uni.wallet_address} | Starting interaction with ERC-20 contract {i+1}...')
                     interact_result = await self.erc20_manager.interact_with_contract(client_uni, contract_address, account_index)
                 
-                    if isinstance(interact_result, Exception):
+                    if isinstance(interact_result, Exception) or interact_result is False:
                         logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-20 Interaction {i+1} failed with error: {interact_result}.')
                     else:
                         logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | ERC-20 Interaction {i+1} completed successfully.')
@@ -67,14 +69,28 @@ class RandomManager:
             
                 result = await self.wrap_manager.wrap_eth(client_uni, WRAP_PARAMS, account_index)
             
-                if isinstance(result, Exception):
+                if isinstance(result, Exception) or result is False:
                     logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | Wrap {i+1} failed with error: {result}.')
                 else:
                     logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | Wrap {i+1} completed successfully.')
+
+            if RANDOM_CONFIG['mint_morkie_nfts'] == True:
+                logger.info(f'Account {account_index+1} | {client_uni.wallet_address} | Starting Morkie NFT mints...')
+
+                unicorn_result = await self.morkie_manager.mint_unicorn_nft(client_uni, account_index)
+                if isinstance(unicorn_result, Exception) or unicorn_result is False:
+                    logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | Unicorn NFT mint failed.')
+                else:
+                    logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | Unicorn NFT mint completed successfully.')
+
+                europa_result = await self.morkie_manager.mint_europa_nft(client_uni, account_index)
+                if isinstance(europa_result, Exception) or europa_result is False:
+                    logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | Europa NFT mint failed.')
+                else:
+                    logger.success(f'Account {account_index+1} | {client_uni.wallet_address} | Europa NFT mint completed successfully.')
 
             return True
 
         except Exception as e:
             logger.error(f'Account {account_index+1} | Error during random interactions: {e}.')
             return None
-        

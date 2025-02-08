@@ -6,7 +6,6 @@ from src.utils import Utils
 from src.client import Client
 from src.manager import Manager
 from src.vars import WETH_ABI
-from config import WRAP_PARAMS
 
 
 class WrapManager:  
@@ -55,10 +54,7 @@ class WrapManager:
                 account_index=account_index
             )
 
-            await Manager.wait_for_positive_balance(client_uni, account_index, WRAP_PARAMS['timeout'])
-
             return result
         except Exception as e:
             logger.error(f'Account {account_index+1} | {client_uni.wallet_address} | Error during wrapping ETH: {e}.')
             return False
-        

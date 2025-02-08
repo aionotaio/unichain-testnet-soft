@@ -68,6 +68,9 @@ class Client:
             elif 'replacement transaction underpriced' in str(e):
                 tx_params['nonce'] += 1
                 return await self.send_transaction(tx_params=tx_params)
+            elif 'already known' in str(e):
+                tx_params['nonce'] += 1
+                return await self.send_transaction(tx_params=tx_params)
             
             logger.warning(f'{self.wallet_address} | Error sending transaction: {e}')
             return None
@@ -181,42 +184,44 @@ class Client:
         if tx:
             return await self.verif_tx(tx, account_index)
         return None
-    
+
     async def mint_morkie_nft(self, contract_address: str, account_index: int) -> Optional[bool]:
-        formatted = self.wallet_address.lstrip('0x').lower()
+        formatted_address = self.wallet_address.lower().replace('0x', '')
+
         tx_params = {
-            'to': contract_address,
+            'chainId': await self.w3.eth.chain_id,
+            'data': f'0x84bb1e42000000000000000000000000{formatted_address}0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
             'from': self.wallet_address,
-            'data': f'0x84bb1e42000000000000000000000000{formatted}0000000000000000000000000000000000000000000000000000000000000001000000000000000000000000eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000000800000000000000000000000000000000000000000000000000000000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000',
-            'gasPrice': await self.w3.eth.gas_price,
+            'to': contract_address,
             'nonce': await self.get_transaction_count(),
-            'chainId': await self.w3.eth.chain_id
+            'gasPrice': await self.w3.eth.gas_price,
+            'value': 0
         }
+
         try:
-            estimate_gas = await self.w3.eth.estimate_gas(tx_params)
-            tx_params['gas'] = int(estimate_gas * 1.1) 
+            gas_estimate = await self.w3.eth.estimate_gas(tx_params)
+            tx_params['gas'] = int(gas_estimate * 1.1)
         except Exception as e:
             if '2' in str(e):
-                logger.error(f'Account {account_index+1} | {self.wallet_address} | Error: Already have NFT from morkie.xyz.')
-                return None
+                logger.info(f'Account {account_index+1} | {self.wallet_address} | Already have NFT from morkie.xyz')
+            else:
+                logger.error(f'Account {account_index+1} | {self.wallet_address} | Error estimating gas: {e}')
+            return None
 
-        tx = await self.send_transaction(tx_params)
+        tx = await self.send_transaction(tx_params=tx_params)
         if tx:
             return await self.verif_tx(tx, account_index)
         return None
-    
+        
     async def verif_tx(self, tx_hash: str, account_index: int) -> bool:
         try:
             data = await self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=200)
-            
             if data.get('status') == 1:
-                logger.debug(f'Account {account_index+1} | {self.wallet_address} | Transaction was successful: {tx_hash.hex()}. Explorer: {self.network.explorer}')
-                return True
-            
+                logger.debug(f'Account {account_index+1} | {self.wallet_address} | Successful tx: {self.network.explorer}/tx/{tx_hash.hex()}')
+                return True 
             else:
-                logger.warning(f'Account {account_index+1} | {self.wallet_address} | Transaction failed: {data["transactionHash"].hex()}. Explorer: {self.network.explorer}')
+                logger.warning(f'Account {account_index+1} | {self.wallet_address} | Failed tx: {self.network.explorer}/tx/{data["transactionHash"].hex()}')
                 return False
-        
         except Exception as e:
             logger.warning(f'Account {account_index+1} | {self.wallet_address} | Unexpected error in <verif_tx> function: {e}')
             return False

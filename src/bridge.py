@@ -61,4 +61,3 @@ class BridgeManager:
         except Exception as e:
             logger.error(f'Account {account_index+1} | {client_eth.wallet_address} | Error during bridging ETH: {e}.')
             return False
-        

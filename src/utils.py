@@ -77,4 +77,3 @@ class Utils:
             rounded_str = rounded_str.rstrip('0').rstrip('.')
     
         return rounded_str
-    
